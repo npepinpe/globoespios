@@ -10,9 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class Workers {
@@ -28,19 +29,25 @@ public class Workers {
   @ZeebeWorker(
       type = "io.globespios.prepararItinerario",
       maxJobsActive = 30,
-      fetchVariables = {"id", "itinerary", "reminderDelay"})
+      fetchVariables = {"key", "itinerary", "reminderDelay"})
   public void prepareItinerary(final JobClient client, final ActivatedJob job) {
     final var request = job.getVariablesAsType(PrepareItinerary.class);
     LOG.info("Preparing itinerary for balloon with ID {}", request.key);
 
     final var parsedDelay = Duration.parse(request.reminderDelay);
-    final Map<String, Object> variables = new HashMap<>();
     if (parsedDelay.compareTo(Duration.ofMinutes(5)) > 0) {
       LOG.warn("Clamping duration of reminder {} down to 5m", parsedDelay);
-      variables.put("recordarDemora", "5m");
+      CompletableFuture.delayedExecutor(1, TimeUnit.MINUTES)
+          .execute(
+              () ->
+                  this.client
+                      .newSetVariablesCommand(job.getProcessInstanceKey())
+                      .variables(Map.of("recordarDemora", "5m"))
+                      .send()
+                      .join());
     }
 
-    client.newCompleteCommand(job).variables(variables).send().join();
+    client.newCompleteCommand(job).send().join();
   }
 
   @ZeebeWorker(

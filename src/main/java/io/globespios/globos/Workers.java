@@ -36,7 +36,7 @@ public class Workers {
 
     final var parsedDelay = Duration.parse(request.reminderDelay);
     if (parsedDelay.compareTo(Duration.ofMinutes(5)) > 0) {
-      LOG.warn("Clamping duration of reminder {} down to 5m", parsedDelay);
+      LOG.debug("Clamping duration of reminder {} down to 5m", parsedDelay);
       CompletableFuture.delayedExecutor(1, TimeUnit.MINUTES)
           .execute(
               () ->

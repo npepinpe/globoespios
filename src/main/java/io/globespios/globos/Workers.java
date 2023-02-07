@@ -73,7 +73,9 @@ public class Workers {
     this.client
         .newPublishMessageCommand()
         .messageName("io.globespios.confirmar")
-        .correlationKey(String.valueOf(request.key));
+        .correlationKey(String.valueOf(request.key))
+        .send()
+        .join();
   }
 
   @ZeebeWorker(

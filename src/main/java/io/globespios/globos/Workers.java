@@ -34,19 +34,6 @@ public class Workers {
     final var request = job.getVariablesAsType(PrepareItinerary.class);
     LOG.info("Preparing itinerary for balloon with ID {}", request.key);
 
-    final var parsedDelay = Duration.parse(request.reminderDelay);
-    if (parsedDelay.compareTo(Duration.ofMinutes(5)) > 0) {
-      LOG.debug("Clamping duration of reminder {} down to 5m", parsedDelay);
-      CompletableFuture.delayedExecutor(1, TimeUnit.MINUTES)
-          .execute(
-              () ->
-                  this.client
-                      .newSetVariablesCommand(job.getProcessInstanceKey())
-                      .variables(Map.of("recordarDemora", "5m"))
-                      .send()
-                      .join());
-    }
-
     client.newCompleteCommand(job).send().join();
   }
 
